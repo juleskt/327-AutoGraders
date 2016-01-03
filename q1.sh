@@ -1,60 +1,99 @@
 #!/bin/bash
 
+question=Q1
+echo $question
+
 #check variables
 if [ -z "$TEMP" ] ; then
     echo "Error: Call this script through grade.sh"
+    exit
 fi
 
 cd $TEMP
 
 #check file
 if ! [ -f ${question}.cpp ] ; then
-    echo -en "\t0\t0\t0\t0\t0\t0\t0" >> $GRADEFILE
+    echo -en "\t0" >> $GRADEFILE
 else
     echo -en "\t1" >> $GRADEFILE
+    
     #compile
     rm testExec > /dev/null 2>&1
-    g++ ${question}.cpp -o testExec > /dev/null 2>&1
-    if ! [ -f testExec ] ; then
-        echo -en "\t0\t0\t0\t0\t0\t0" >> $GRADEFILE
+    output=`g++ -std=c++0x ${question}.cpp -Wall -o testExec 2>&1`
+    if ! [ -f testExec -o -z "echo $output | grep error" ] ; then
+        echo -en "\t0" >> $GRADEFILE
     else
         echo -en "\t1" >> $GRADEFILE
-        #test case 1 - normal
-        if [ -z "`echo "1 1 4 2 2 8" | ./testExec | grep "THE CIRCLES OVERLAP"`" ] ; then
+      : << 'END' 
+        textFile=randomletters.txt
+        
+        #creates file
+        ./testExec > /dev/null 2>&1
+        if ! [ -f $textFile ] ; then
+            echo -en "\t0" >> $GRADEFILE
+            return
+        else
+            echo -en "\t1" >> $GRADEFILE
+        fi
+        rm $textFile > /dev/null 2>&1
+        
+        #appends to file
+        echo "testing" > $textFile
+        ./testExec > /dev/null 2>&1
+        if [ "$(head -n 1 $textFile)" != "testing" ] ; then
             echo -en "\t0" >> $GRADEFILE
         else
             echo -en "\t1" >> $GRADEFILE
         fi
-        #test case 2 - one contains the other
-        if [ -z "`echo "0 0 4 0 0 8" | ./testExec | grep "THE CIRCLES OVERLAP"`" ] ; then
+        rm $textFile > /dev/null 2>&1
+        
+        #100 chars
+        ./testExec > /dev/null 2>&1
+        #count chars after removing newlines, spaces, tabs
+        numchars=`cat $textFile | tr -d '\n' | tr -d ' ' | tr -d '\t' | wc -m`
+        if [ "$numchars" -ne 100 ] ; then
             echo -en "\t0" >> $GRADEFILE
         else
             echo -en "\t1" >> $GRADEFILE
         fi
-        #test case 3 - not overlapping
-        output=`echo "0 0 1 5 5 1" | ./testExec | grep DISTANCE`
-        output=`echo ${output##* } | tr -d .` #get last word, remove dots
-        if [ -z "$output" ] || [ $output != 507 ] ; then
-            echo -en "\t0" >> $GRADEFILE
-            echo -en "\t${question}:${output}" >> $LOGFILE 
-        else
-            echo -en "\t1" >> $GRADEFILE
-        fi
-        #test case 4 - negative coord
-        if [ -z "`echo "1 -1 4 -2 2 8" | ./testExec | grep "THE CIRCLES OVERLAP"`" ] ; then
+        rm $textFile > /dev/null 2>&1
+        
+        #random
+        if [ -z "`grep rand ${question}.cpp`" ] ; then
             echo -en "\t0" >> $GRADEFILE
         else
             echo -en "\t1" >> $GRADEFILE
         fi
-        #test case 5 - not overlapping, negative
-        output=`echo "0 -2 1 3 2 1" | ./testExec | grep DISTANCE`
-        output=`echo ${output##* } | tr -d .` #get last word, remove dots
-        if [ -z "$output" ] || [[ "$output" != 3 && "$output" != 300 ]]; then
+        
+        #seeded
+        if [ -z "`grep srand ${question}.cpp`" ] ; then
             echo -en "\t0" >> $GRADEFILE
-            echo -en "\t${question}:${output}" >> $LOGFILE 
         else
             echo -en "\t1" >> $GRADEFILE
         fi
+        
+        #lowercase
+        ./testExec > /dev/null 2>&1
+        chars=`cat $textFile | tr -d '\n' | tr -d ' ' | tr -d '\t'`
+        #check string after stripping lowercases
+        if [ -z "`echo $chars | grep -v [a-z]`" ] ; then
+            echo -en "\t1" >> $GRADEFILE
+        else
+            echo -en "\t0" >> $GRADEFILE
+        fi
+        rm $textFile > /dev/null 2>&1
+        
+        #tab delimited
+        ./testExec > /dev/null 2>&1
+        chars=`cat $textFile`
+        res="${chars//[^\t]}"
+        numtabs=${#res}
+        if [ "$numtabs" -lt 99 -o "$numtabs" -gt 102 ] ; then
+            echo -en "\t1" >> $GRADEFILE
+        else
+            echo -en "\t0" >> $GRADEFILE
+        fi
+        
     fi
-fi
-  
+END
+fi 
