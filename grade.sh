@@ -4,7 +4,7 @@
 HW=midterm2
 
 #use startWith to skip alphabetically ordered users
-startWith="gkware" #put user name here to start the grading with
+startWith="username" #put user name here to start the grading with
 
 ROOT_FOLDER=`pwd`
 SUBMISSIONS=${ROOT_FOLDER}/${HW}
