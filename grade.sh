@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #define variables
-HW=midterm2
+HW=assignmentName
 
 #use startWith to skip alphabetically ordered users
 startWith="username" #put user name here to start the grading with
